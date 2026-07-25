@@ -6,19 +6,32 @@ metadata:
   region: us-east-1
   version: "1.31"
 
-# Uses your pre-existing KodeKloud VPC and Subnets
+# Network Configuration
 vpc:
   id: "vpc-0ea4f485f80d74d31"
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
   subnets:
     public:
       us-east-1a:
         id: "subnet-0ffe1fa436f41ee03"
       us-east-1b:
-        id: "subnet-0e67b279e8c5d221"
+        id: "subnet-0e67b279e8c52d221"
 
-# Bypasses iam:PassRole block using the allowed sandbox service role
+# Bypasses sandbox restrictions using pre-created role
 iam:
   serviceRoleARN: "arn:aws:iam::730335251706:role/eksClusterRole"
+
+managedNodeGroups:
+  - name: ng-default
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 1
+    maxSize: 3
+    subnets:
+      - subnet-0ffe1fa436f41ee03
+      - subnet-0e67b279e8c52d221
 
 fargateProfiles:
   - name: fp-default

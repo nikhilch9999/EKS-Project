@@ -1,0 +1,21 @@
+KODEKLOUD EKS LAB STEPS
+
+1. Create EC2 key pair named node-key-pair
+2. Create CloudFormation stack named eks-cluster-stack
+3. Use template URL:
+   https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2022-12-23/amazon-eks-nodegroup.yaml
+4. Set parameters:
+   - Stack Name: eks-cluster-stack
+   - ClusterName: demo-eks
+   - ClusterControlPlaneSecurityGroup: select the EKS cluster security group
+   - NodeGroupName: eks-demo-node
+   - KeyName: node-key-pair
+   - VpcId: your VPC ID
+   - Subnets: the same subnets used for the cluster
+5. Wait for stack CREATE_COMPLETE
+6. Open Outputs tab and copy NodeInstanceRole
+7. Replace REPLACE_WITH_NODE_INSTANCE_ROLE_ARN in aws-auth-cm.yaml with that value
+8. Run:
+   kubectl apply -f aws-auth-cm.yaml
+9. Verify:
+   kubectl get nodes
