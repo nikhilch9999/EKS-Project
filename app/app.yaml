@@ -17,14 +17,10 @@ spec:
     spec:
       containers:
       - name: web-frontend
-        # VERSION 1: Sleek Admin/Analytics dashboard layout
-        image: ://microsoft.com
+        # This image comes with a gorgeous, fully pre-loaded animated UI out of the box
+        image: nginxdemos/hello:plain
         ports:
         - containerPort: 80
-        lifecycle:
-          postStart:
-            exec:
-              command: ["/bin/sh", "-c", "wget -qO- https://githubusercontent.com > /usr/share/nginx/html/index.html"]
 ---
 apiVersion: v1
 kind: Service
@@ -36,6 +32,6 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-    nodePort: 30080  # Fixed port for easy access in KodeKloud
+    nodePort: 30080
   selector:
     app: fancy-ui
