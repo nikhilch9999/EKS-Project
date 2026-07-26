@@ -1,62 +1,41 @@
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: game-2048
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: game-2048
-  name: deployment-2048
+  name: fancy-dashboard
+  namespace: default
+  labels:
+    app: fancy-ui
 spec:
+  replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: app-2048
-  replicas: 5
+      app: fancy-ui
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: app-2048
+        app: fancy-ui
     spec:
       containers:
-      - image: public.ecr.aws/l6m2t8p7/docker-2048:latest
-        imagePullPolicy: Always
-        name: app-2048
+      - name: web-frontend
+        # VERSION 1: Sleek Admin/Analytics dashboard layout
+        image: ://microsoft.com
         ports:
         - containerPort: 80
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "wget -qO- https://githubusercontent.com > /usr/share/nginx/html/index.html"]
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: game-2048
-  name: service-2048
+  name: fancy-dashboard-svc
+  namespace: default
 spec:
-  ports:
-    - port: 80
-      targetPort: 80
-      protocol: TCP
   type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080  # Fixed port for easy access in KodeKloud
   selector:
-    app.kubernetes.io/name: app-2048
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  namespace: game-2048
-  name: ingress-2048
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-spec:
-  ingressClassName: alb
-  rules:
-    - http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: service-2048
-              port:
-                number: 80
+    app: fancy-ui
