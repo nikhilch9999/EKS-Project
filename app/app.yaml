@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
       - name: web-frontend
-        # This image comes with a gorgeous, fully pre-loaded animated UI out of the box
-        image: nginxdemos/hello:plain
+        image: nginxdemos/hello:latest
         ports:
         - containerPort: 80
 ---
