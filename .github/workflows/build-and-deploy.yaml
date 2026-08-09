@@ -3,6 +3,9 @@ name: Build, Scan, Push, Update Kustomization
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
