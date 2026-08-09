@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eks-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eks-app
+  template:
+    metadata:
+      labels:
+        app: eks-app
+    spec:
+      containers:
+      - name: eks-app
+        image: ghcr.io/example/eks-app:latest
+        ports:
+        - containerPort: 8080

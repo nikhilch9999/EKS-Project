@@ -1,0 +1,62 @@
+name: Build, Scan, Push, Update Kustomization
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: true
+
+    - name: Set short SHA
+      run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to GHCR
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./app
+        file: ./app/Dockerfile
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/eks-app:${{ env.SHORT_SHA }}
+          ghcr.io/${{ github.repository_owner }}/eks-app:latest
+
+    - name: Scan image with Trivy
+      uses: aquasecurity/trivy-action@v0.5.1
+      with:
+        image-ref: ghcr.io/${{ github.repository_owner }}/eks-app:${{ env.SHORT_SHA }}
+        format: 'table'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Update kustomization image name and tag
+      run: |
+        sed -i "s|ghcr.io/example/eks-app|ghcr.io/${{ github.repository_owner }}/eks-app|g" app/kustomization.yaml
+        sed -i "s/newTag: \".*\"/newTag: \"${SHORT_SHA}\"/" app/kustomization.yaml
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add app/kustomization.yaml
+        git commit -m "ci: update kustomization image to ${GITHUB_REPOSITORY_OWNER}/eks-app:${SHORT_SHA}" || echo "no changes to commit"
+        git push
