@@ -19,6 +19,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         persist-credentials: true
+        fetch-depth: 0
 
     - name: Set short SHA
       run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
@@ -58,8 +59,35 @@ jobs:
       run: |
         sed -i "s|ghcr.io/example/eks-app|ghcr.io/${{ github.repository_owner }}/eks-app|g" app/kustomization.yaml
         sed -i "s/newTag: \".*\"/newTag: \"${SHORT_SHA}\"/" app/kustomization.yaml
+
+    - name: Commit and push kustomization update to main
+      env:
+        SHORT_SHA: ${{ env.SHORT_SHA }}
+      run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Ensure we have the main branch and are not in detached HEAD
+        git fetch origin main
+        if git show-ref --verify --quiet refs/heads/main; then
+          git switch main
+        else
+          git switch -c main origin/main
+        fi
+        git reset --hard origin/main
+
+        # Apply changes from workspace and commit
         git add app/kustomization.yaml
         git commit -m "ci: update kustomization image to ${GITHUB_REPOSITORY_OWNER}/eks-app:${SHORT_SHA}" || echo "no changes to commit"
-        git push
+
+        # Try pushing with a simple retry loop to handle transient conflicts
+        for i in 1 2 3; do
+          if git push origin main; then
+            echo "push succeeded"
+            break
+          else
+            echo "push failed, attempting to rebase and retry ($i)"
+            git fetch origin main
+            git rebase origin/main || git reset --hard origin/main
+          fi
+        done
